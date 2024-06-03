@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>로그인 중..</title>
+    <link href="/css/main.css" rel="stylesheet">
+  </head>
+
+  <body class="grey-bg">
+    <%- include('nav.ejs') %>  
+
+    <form class="form-box" action="/login" method="POST">
+      <h4>로그인</h4>
+      <div class="form-floating mb-3">
+        <input class="form-control" name="username" id="floatingInput" placeholder="username">
+        <label for="floatingInput">username</label>
+      </div>
+      <div class="form-floating">
+        <input class="form-control" name="password" type="password" id="floatingPassword" placeholder="password">
+        <label for="floatingPassword">password</label>
+      </div>
+      <button type="submit" class="btn btn-primary">전송</button>        
+    </form>
+  </body>
+  <script>
+    document.getElementById('floatingInput').focus()
+  </script>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>글작성 중..</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.min.css"/>
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor-plugin-color-syntax/latest/toastui-editor-plugin-color-syntax.min.css"/>
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+  </head>
+  <body class="grey-bg">
+    <%- include('nav.ejs') %>  
+    <!-- <form class="form-box" action="/addedRows" method="POST" enctype="multipart/form-data"> encoding type을 입력해줘야 서버로 전송이 됨 -->
+        <!--<div class="form-floating mb-3">
+          <input class="form-control" name="content" id="content" placeholder="내용">
+          <label for="content">내용</label>
+        </div>-->
+      <!-- <input type="file" name="img1" accept="image/*"> 맨마지막에 multiple속성을 쓰고 저장하면 여러장의 이미지도 한번에 업로드 가능 -->
+      <!--<button type="submit">전송</button>-->
+    </form>
+    <div class="white-bg" style="padding:20px;">
+      <h4>글쓰기</h4>
+      <div class="form-floating mb-3">
+        <input class="form-control" name="title" id="title" placeholder="제목">
+        <label for="title">제목</label>
+      </div>
+      <div id="editor"></div>
+      <button id="submit" class="btn btn-success">Submit</button>
+    </div>
+    <script src="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.min.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script src="https://uicdn.toast.com/editor-plugin-color-syntax/latest/toastui-editor-plugin-color-syntax.min.js"></script>
+    <script>
+      document.getElementById("title").focus()
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        const Editor = toastui.Editor;
+        const plugin = Editor.plugin;
+
+        const editor = new Editor({
+          el:document.querySelector("#editor"),
+          height: "500px",
+          initialEditType: "WYSIWYG",
+          previewStyle: "vertical",
+          hideModeSwitch: true,
+          toolbarItems: [
+            ['heading', 'bold', 'italic', 'strike'], 
+            ['hr', 'quote'], 
+            ['ul','ol','task','indent','outdent'],
+            ['table','image','link'],
+            ['code','codeblock']
+          ],
+          hooks: {
+            addImageBlobHook: async (blob, callback) => {
+              const formData = new FormData();
+              formData.append('file', blob);
+
+              try {
+                const response = await fetch('/write/upload', {
+                  method: "POST",
+                  body: formData
+                });
+                const data = await response.json();
+                callback(data.url);
+              } catch (error) {
+                console.error("Error Uploading Image:", error);
+              }
+            }
+          },
+          plugins: [plugin.colorSyntax]
+        });
+
+        document.getElementById("submit").addEventListener('click', () => {
+        const content = editor.getMarkdown();
+        let title = document.getElementById("title").value;
+        if(title == ''){
+          return alert('제목 입력 안하냐? 쪼그려뛰기 3회 준비')
+        }
+        else {
+          fetch("/write/add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          // title: JSON.stringify({title}),
+          body: JSON.stringify({content, title})
+          })
+          .then(response => response.json())
+          .then(data => {
+            window.location.href = data.redirectUrl
+            console.log("Success:", data);
+          })
+          .catch(error => {
+            console.log("Error:", error);
+          });
+        }
+      });
+    });
+    </script>
+  </body>
+
+</html>

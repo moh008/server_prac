@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>글 수정중..</title>
+    <link href="/css/main.css" rel="stylesheet">
+  </head>
+
+  <body class="grey-bg" >
+    <%- include('nav.ejs') %> 
+    <form class="form-box" action="/edit?_method=PUT" method="POST" enctype="multipart/form-data"> <!--RESTful 하게 method를 PUT으로 해야하나 HTML의 form태그에선 GET과 POST밖에 못함-->
+      <h4>글 수정하기</h4>                                            <!--근데 methodOverride로 "?_method=PUT"으로 PUT요청으로 바꾸게 해줌-->
+      <input name="_id" value="<%=data._id%>" style="display:none">
+      <input name="title" value="<%=data.title%>" id="title">
+      <input name="content" value="<%=data.content%>">
+      <img src="<%=data.img%>">
+      <input type="file" name="img1" accept="image/*">
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+    <script>
+      document.getElementById("title").focus()
+    </script>
+  </body>
+
+</html>

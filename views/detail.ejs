@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글 상세페이지</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor-viewer.min.css" />
+    <script>
+      function editVerify(e) {
+        if ('<%=user._id%>' != '<%= row.user%>') {
+          alert('작성자 본인만 수정할 수 있습니다')
+          e.preventDefault()
+        }
+      }
+    </script>
+  </head>
+  <body class = "grey-bg">
+    <%- include('nav.ejs') %>
+    <div class="white-bg">
+      <div class="list-box">
+        <h4>
+          <%= row.title %>
+          <a href="/edit/<%= row._id%>" id="edit" style="text-decoration: none;" onclick="editVerify(event)">✏</a>
+          <% if (user.username == row.username) {%>
+          <form class="form-box" id="delete" data-user="<%=row.username%>" style="float:right; margin-top:0px; padding-top:10px; padding-right:0px;" action="/deleteOnDetail/post?_method=DELETE" method="POST">
+            <input name="_id" value ="<%= row._id%>" style="display:none;">
+            <input name="poster" value="<%=row.username%>" style="display:none;">
+            <button type="submit" class="btn btn-danger">🗑</button>            
+          </form>
+          <% } %>
+        </h4>
+        <div id="viewer"></div>
+        <p id="poster" value="<%=row.username%>">작성자: <%=row.username%></p>
+        <p>게시된 시간: <%=row.time%></p>
+        
+        <!--채팅하기 버튼-->
+        <input type="text" id="posterUserId" value="<%=row.user%>" style="display:none">
+        <input type="text" id="posterUsername" value="<%=row.username%>" style="display:none">
+        <button id="enterChat" class="btn btn-success" onclick="enterChat()">채팅하기
+      </div>
+      
+    </div>
+
+    <div class="white-bg">
+        <%for(let i=0; i< comment.length; i++) { %>
+          <div class="form-control">
+            <p style="font-size:13px; color: grey;"><%=comment[i].username%></p>
+            <a id="deleteCon" class="deleteCon" style="cursor:pointer; float:right; text-decoration:none;" data-id="<%= comment[i]._id%>" data-user="<%=comment[i].username%>">🗑</a>
+            <h4 style="font-size:16px;"><%=comment[i].content%></h4>
+          </div>
+        <% } %>
+    </div>
+    <form class="form-box" action="/comment" method="POST">
+      <div class="form-floating">
+        <input name="parentId" value="<%=row._id%>" style="display:none">
+        <input class="form-control" id="content" name="content" placeholder="comment">
+        <label for="content">Leave comment</label>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </form>    
+
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-viewer.js"></script>
+    <script>
+      function enterChat() {
+        if(<%=signed%> == 1){
+          let userId = document.getElementById('posterUserId').value;
+          let username = document.getElementById('posterUsername').value;
+          location.href = '/addChatRoom?userId=' + userId +'&username=' + username
+        } else {
+          alert('로그인시에만 채팅가능합니다')
+          window.location.replace('/login')
+        }        
+      }
+
+      document.addEventListener('DOMContentLoaded', async () => {
+        const Viewer = toastui.Editor;
+
+        try {
+          const response = await fetch('/getContent/<%=row._id%>');
+          const data = await response.json();
+          console.log(data.result.content)
+          const viewer = new Viewer({
+            el: document.querySelector('#viewer'),
+            initialValue: data.result.content
+          });
+          const images = document.querySelectorAll('.toastui-editor-contents img');
+          images.forEach(img => {
+            img.style.width = '300px';
+            img.style.height = 'auto';
+          })
+        } catch (error) {
+          console.error('Error fetching content:', error);
+        }
+      });
+
+      for(let i = 0; i < '<%=comment.length%>'; i++) {
+        document.querySelectorAll('.deleteCon')[i].addEventListener('click', function(e) {
+          if(e.target.dataset.user != '<%=user.username%>') {
+            return alert('댓글 작성자 본인만 삭제할 수 있습니다')
+          } else {
+            fetch('/deleteOnDetail/comment?comId=' + e.target.dataset.id, {
+              method: 'DELETE'
+            })
+            .then((r) => r.text())
+            .then((r) => {
+              e.target.parentElement.style.display='none';
+            })
+          }
+        })
+      }
+    </script>
+  </body>
+</html>

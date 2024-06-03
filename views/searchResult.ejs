@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>검색결과</title>  
+  <link href="/css/main.css" rel="stylesheet">
+</head>
+<body class = "grey-bg">
+  <%- include('nav.ejs') %>
+  <!--<%=JSON.stringify(글목록) %>-->
+  <div class="grey-bg" style="float:right;margin-right:20px;margin-top:15px;">
+    <%for (let i=1; i <= Math.ceil(글수/10); i++) { %>
+      <button id="button" type="button" onclick="location.href='/searchWord/<%=i%>?keyword=<%=keyword%>' " class="btn btn-primary" >
+      <%= i %>
+      </button>
+    <% } %>    
+  </div>
+
+  <div class="mb-3" style="margin:20px;">
+    <div class="search-result">검색결과 <%=글수%>건</div>
+  </div>
+  
+  <div class="white-bg">
+    <%for(let i=0;i < 글목록.length; i++){%>
+      <div class="list-box">
+        <h4>
+          <a href="/detail/<%=글목록[i]._id%>" style="text-decoration:none; color:#000">
+            <%= 글목록[i].title %>
+          </a>
+          <span class="edit" data-id = "<%=글목록[i]._id%>" data-userid="<%= 글목록[i].user %>" style="cursor:pointer">✏</span>
+          <%if (signed == 1) {%>
+            <a id="delete" class="delete" style="cursor:pointer; float:right; text-decoration:none;" data-id="<%= 글목록[i]._id%>">🗑</a>               <!-- html에 _id 숨겨놓음-->
+          <% } %>
+          <p data-id="<%=글목록[i].time%>"></p>
+        </h4>
+         <!-- 서버사이드 렌더링-->
+         <p><%= 글목록[i].content %></p>
+         <a href="/detail/<%=글목록[i]._id%>"><img src="<%=글목록[i].img%>"/></a>        
+      </div>
+    <% } %>
+  </div>  
+
+  <script>
+    for(let i = 0; i < '<%=글목록.length%>'; i++){        //ejs 문법은 javascript안에서 '' 안에 string 형태로 넣어줘야 인식
+      document.querySelectorAll('.edit')[i].addEventListener('click', function(e) {
+        if(e.target.dataset.userid != '<%=user._id%>') {
+          return alert('작성자 본인만 수정할 수 있습니다')
+        } else {
+          location.href = '/edit/'+ e.target.dataset.id
+        }
+      })
+      document.querySelectorAll('.delete')[i].addEventListener('click', function(e) { //아래 기능은 콜백함수 파라미터 e를 써야지 사용 가능함
+        fetch('/delete?docId=' + e.target.dataset.id, {  //e.target.dataset.id e.target 은 현재 유저가 클릭한 타겟을 가리킴 그 안의 dataset.id를 가져오란말 /delete? ... Query String 문법이라 부름
+          method : 'DELETE'
+        })
+        .then((r)=>r.text())                             //서버에서 보낸 데이터 'r', 서버에서 보내는 r을 출력하고싶으면 문자일 경우: r.text() 오브젝트같은 경우: r.json()
+        .then((r)=>{                                    //클릭한 element의 부모의 부모의 (list_box) 를 안보이게 처리, 즉 현재 ajax는 새로고침없이 DB의 row를 지울수있으나 페이지 새로고침을 안하기때문에 바로는 지워진게 안보임
+          e.target.parentElement.parentElement.style.display='none'; //그래서 ajax로 list_box element를 지우는 기능을 추가
+        })
+        //html 보여주는법 1. 서버사이드 렌더링: 서버가 html파일을 보내줘서 웹페이지 표시(항상 새로고침), 2.클라이언트사이드 렌더링: 서버가 데이터만 보내고 ajax로 브라우저에서 완성하기(새로고침 없어도 가능)
+        //클라이언트사이드 렌더링 사용 (react로 하면 편하다고함)
+      })
+    }
+  </script>
+</body>
+</html>
