@@ -2,6 +2,7 @@ import 'dotenv/config'                              //환경변수들을 따로 
 import {Callback, Db, ObjectId} from 'mongodb'
 import express, {Request, Response} from 'express'
 import { connectDB } from './database'
+import path from 'path';
 
 const bodyParser = require ('body-parser')
 const app = express()
@@ -77,7 +78,7 @@ connectDB.then((client)=>{
   console.log('DB연결 성공')
   db = client.db('forum');                   //forum이라는 이름의 Database에 접속 (RDB의 하위개념 Schema와는 어떤관계인지모르나 대충 비슷하다고 생각..)
   server.listen(process.env.PORT, function(){               //포트번호도 환경변수에 속함 .env에서 끌어올땐 process.env.변수명 방식으로 사용
-    console.log('http://localhost:8080 에서 서버 실행중');
+    console.log(`http://localhost:${process.env.PORT} 에서 서버 실행중`);
   });
 }).catch((err : Error)=>{
   console.log(err)
@@ -100,7 +101,7 @@ function ask_logout(req: any, res: Response, next: Function){
 //Home 접속시
 app.get('/', function(req: any, res: Response){
   console.log(req.user)
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile(path.join(__dirname, '/index.html'));
 })
 
 app.get('/home', (req: any, res: any) => {
@@ -137,10 +138,6 @@ app.post('/write/add', ask_login, async(req: any, res: Response)=>{
     res.status(500).send('서버에러남');
   }
 })
-
-// app.get('/success', (req: any, res: any) => {
-//   res.redirect('/list/1')
-// })
 
 //토스터ui editor에서 내용입력할때 이미지 업로드시(AWS에 업로드 먼저) 이미지 미리보기 표시용 post api
 app.post('/write/upload', upload.single('file'), (req: any, res: any) => {
@@ -274,41 +271,36 @@ app.post('/comment', async (req: any, res: Response)=> {
 
 app.get('/edit/:id', ask_login, async(req: any, res:Response)=>{
   let result = await db.collection('post').findOne({_id : new ObjectId(req.params.id)})
-  if(req.session.passport === undefined) res.render('edit.ejs', {data:result, signed: 0})
-    else if(req.session.passport) res.render('edit.ejs', {data:result, signed: 1, user:req.user?req.user:0})
+  if (result != null) {
+    let contentHTML = JSON.stringify(result.content).replace(/\n/, "<br>")
+    console.log(contentHTML)
+    if(req.session.passport === undefined) res.render('edit.ejs', {data:result, content:contentHTML, signed: 0})
+    else if(req.session.passport) res.render('edit.ejs', {data:result, content:contentHTML, signed: 1, user:req.user?req.user:0})
+  }  
 })
 
-app.put('/edit', upload.single('img1'), async(req: any, res: Response)=>{//RESTful 포맷에 따라 methodOverride로 POST요청에서 PUT요청으로 바꿈
+app.put('/edit', ask_login, async(req: any, res: Response)=>{//RESTful 포맷에 따라 methodOverride로 POST요청에서 PUT요청으로 바꿈
   try{                                       //try 안에 코드 실행해보고
-    if(req.body.title==""){
-      res.send('제목 똑바로 입력안하냐? 쪼그려뛰기 준비');
-    }
-    else if(req.body.content==""){
-      res.send('내용 똑바로 입력안하냐?');
-    }
-    else {
-      if(!req.file){
-        await db.collection('post').updateOne(
-          {_id: new ObjectId(req.body._id)}, 
-          {
-            $set: {title: req.body.title, content: req.body.content}
-          }
-        )
-      } else {
-        await db.collection('post').updateOne(
-          {_id: new ObjectId(req.body._id)}, 
-          {
-            $set: {title: req.body.title, content: req.body.content, img: req.file.location}
-          }
-        )
+    await db.collection('post').updateOne(
+      {_id: new ObjectId(req.body._id)}, 
+      {
+        $set: {title: req.body.title, content: req.body.content}
       }
-                                           //db insert 문법 post라는 컬렉션(RDB에선 Table)에 접속
-      console.log(req.body, req.file);
-      res.redirect('/list/1');                 //페이지 네비게잇   
-    }
+    )
+    //db insert 문법 post라는 컬렉션(RDB에선 Table)에 접속
+    res.json({redirectUrl: '/list/1'});                 //페이지 네비게잇   
   } catch (e) {                              //에러났으면 catch 코드 실행해봐
     console.log(e);                          //어떤 이유로 에러가 났는지 확인
     res.status(500).send('서버에러남');
+  }
+})
+
+//토스터ui editor에서 내용입력할때 이미지 업로드시(AWS에 업로드 먼저) 이미지 미리보기 표시용 post api
+app.post('/edit/upload', upload.single('file'), (req: any, res: any) => {
+  if (req.file) {
+    res.json({ url: req.file.location});
+  } else {
+    res.status(400).send('No file uploaded');
   }
 })
 
@@ -468,6 +460,7 @@ app.get('/chat/detail/:id', async (req: any, res: any) => {
   if(req.session.passport === undefined) res.render('chatDetail.ejs', {signed:0})
   else if(req.session.passport) {
     let result = await db.collection('chats').findOne({_id: new ObjectId(req.params.id)})
+    console.log(req.params.id)
     console.log(result)
     let chatResult = await db.collection('chatMessages').find({parentId: new ObjectId(req.params.id)}).sort({date: 1}).toArray()
 
@@ -526,6 +519,7 @@ io.on('connection', (socket: any) => {
       text: data.msg,
       parentId: new ObjectId(data.room),
       poster: new ObjectId(data.poster),
+      posterUsername: data.posterUsername,
       date: new Date()
     }) //text, data, parentId, poster
     io.to(data.room).emit('message-broadcast', {msg: data.msg, posterId: data.poster} )//data.room에 'message-broadcast'라는 이름으로 data.msg를 뿌려준다
@@ -545,7 +539,7 @@ app.get('/stream/list', (req, res) => {
     { $match: {operationType: 'insert'}}  //{$match: { 'fullDocument.title' : 'nnnn'}} object접근 . 을 찍을때는 따옴표를 해줘야함 (몽고db 사용법)
   ]
   //post collection에 변동사항이 생길때마다 (document 생성/수정/삭제시)
-  let changeStream = db.collection('post').watch()
+  let changeStream = db.collection('chatMessages').watch()
   changeStream.on('change', (result)=> {  //안의 코드가 실행됨
     if(result.operationType == 'insert') {
       res.write('event: msg\n')

@@ -35,8 +35,12 @@
           <p data-id="<%=글목록[i].time%>"></p>
         </h4>
          <!-- 서버사이드 렌더링-->
-         <p><%= 글목록[i].content %></p>
-         <a href="/detail/<%=글목록[i]._id%>"><img src="<%=글목록[i].img%>"/></a>        
+         <%if (글목록[i].content.indexOf('![](') != -1) { %> <!--사진이 있는 글일 경우 -->
+          <p><%= 글목록[i].content.substring(0, 글목록[i].content.indexOf('![](') - 1) %></p>
+          <a href="/detail/<%=글목록[i]._id%>"><img src="<%=글목록[i].content.substring(글목록[i].content.indexOf('![](') + 4, 글목록[i].content.indexOf(')'))%>" style="width:200px"/></a><!--미리보기는 제일 앞의 한장만 제공-->
+        <% } else { %>
+          <p><%= 글목록[i].content %></p>
+        <% } %>
       </div>
     <% } %>
   </div>  

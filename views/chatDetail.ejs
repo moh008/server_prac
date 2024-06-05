@@ -52,7 +52,7 @@
         function() {  //.chat-button 버튼을 누를시, 1번방에 '반가워'를 보내는 요청을 서버에
           let text = document.querySelector('.chat-input').value
           if(text) {
-            socket.emit('message-send', { msg: text, room: '<%=result._id%>', poster: '<%=user._id%>'})
+            socket.emit('message-send', { msg: text, room: '<%=result._id%>', poster: '<%=user._id%>', posterUsername: '<%=user.username%>'})
             document.querySelector('.chat-input').value = ""
           }
         }

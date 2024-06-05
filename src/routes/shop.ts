@@ -1,7 +1,7 @@
 //서버에서 분리된 api들 server.js와 달리 app.get이 아니라 router.get 인것 확인
 const router = require('express').Router()
 import {Db} from 'mongodb'
-import {connectDB} from '../database'
+import {connectDB} from '../database' //src 폴더 / routes폴더의 코드이므로 위,위의 폴더에서 database.ts파일을 import
 
 // db를 쓰기위해서는..
 let db: Db;

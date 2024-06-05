@@ -94,7 +94,8 @@ input {
   font-size: 14px;
 }
 
-.image-search {
+.icon {
+  display: flex;
   position : absolute;
   width: 17px;
   top: 10px;

@@ -5,21 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>글 수정중..</title>
     <link href="/css/main.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.min.css"/>
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor-plugin-color-syntax/latest/toastui-editor-plugin-color-syntax.min.css"/>
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
   </head>
 
   <body class="grey-bg" >
     <%- include('nav.ejs') %> 
-    <form class="form-box" action="/edit?_method=PUT" method="POST" enctype="multipart/form-data"> <!--RESTful 하게 method를 PUT으로 해야하나 HTML의 form태그에선 GET과 POST밖에 못함-->
-      <h4>글 수정하기</h4>                                            <!--근데 methodOverride로 "?_method=PUT"으로 PUT요청으로 바꾸게 해줌-->
-      <input name="_id" value="<%=data._id%>" style="display:none">
-      <input name="title" value="<%=data.title%>" id="title">
-      <input name="content" value="<%=data.content%>">
-      <img src="<%=data.img%>">
-      <input type="file" name="img1" accept="image/*">
-      <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+    <!--<form class="form-box" action="/edit?_method=PUT" method="POST" enctype="multipart/form-data"> <!--RESTful 하게 method를 PUT으로 해야하나 HTML의 form태그에선 GET과 POST밖에 못함-->
+    <!--근데 methodOverride로 "?_method=PUT"으로 PUT요청으로 바꾸게 해줌-->
+    <!--<img src="<%=data.img%>">
+    <input type="file" name="img1" accept="image/*">
+    <button type="submit" class="btn btn-primary">Submit</button>
+    </form>-->
+    <div class="white-bg" style="padding:20px;">
+      <h4>글 수정하기</h4>
+      <input name="_id" value="<%=data._id%>" id="_id" style="display:none; width:300px">
+      <input name="title" value="<%=data.title%>" id="title" style="width:100%">
+      <div id="editor"></div>
+      <button id="submit" class="btn btn-success">Submit</button>
+    </div>
+    <script src="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.min.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script src="https://uicdn.toast.com/editor-plugin-color-syntax/latest/toastui-editor-plugin-color-syntax.min.js"></script>
     <script>
       document.getElementById("title").focus()
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const Editor = toastui.Editor;
+        const plugin = Editor.plugin;
+        const dbcontent = "<%=content%>"
+        const refinedContent = dbcontent.slice(5, dbcontent.length-5)
+        
+        const editor = new Editor({
+          el:document.querySelector("#editor"),
+          initialValue: refinedContent,
+          height: "500px",
+          initialEditType: "wysiwyg",
+          previewStyle: "vertical",
+          hideModeSwitch: true,
+          toolbarItems: [
+            ['heading', 'bold', 'italic', 'strike'], 
+            ['hr', 'quote'], 
+            ['ul','ol','task','indent','outdent'],
+            ['table','image','link'],
+            ['code','codeblock']
+          ],
+          hooks: {
+            addImageBlobHook: async (blob, callback) => {
+              const formData = new FormData();
+              formData.append('file', blob);
+
+              try {
+                const response = await fetch('/edit/upload', {
+                  method: "POST",
+                  body: formData
+                });
+                const data = await response.json();
+                callback(data.url);
+              } catch (error) {
+                console.error("Error Uploading Image:", error);
+              }
+            }
+          },
+          plugins: [plugin.colorSyntax]
+        });
+
+        const images = document.querySelectorAll('.toastui-editor-contents img');
+        images.forEach(img => {
+          img.style.width = '300px';
+          img.style.height = 'auto';
+        });
+
+        document.getElementById("submit").addEventListener('click', () => {
+        const content = editor.getMarkdown();
+        let _id = document.getElementById("_id").value;
+        let title = document.getElementById("title").value;
+        if(title == ''){
+          return alert('제목 입력 안하냐? 쪼그려뛰기 3회 준비')
+        }
+        else {
+          fetch("/edit/", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          // title: JSON.stringify({title}),
+          body: JSON.stringify({_id, content, title})
+          })
+          .then(response => response.json())
+          .then(data => {
+            window.location.href = data.redirectUrl
+            console.log("Success:", data);
+          })
+          .catch(error => {
+            console.log("Error:", error);
+          });
+        }
+      });
+    });
     </script>
   </body>
 

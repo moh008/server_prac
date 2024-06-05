@@ -16,13 +16,11 @@
       </button>
     <% } %>    
   </div>
-  <div class="mb-3" style="margin-left:20px;">
-    <form class="search" action="/searchWord/1">
+  
+    <form class="search" action="/searchWord/1" style="margin-left:20px;">
       <input name="keyword" class="form-control" id="keyword" placeholder="검색어 입력" style="margin-top:15px">
-      <img class="image-search" src="https://lincolncaforum1.s3.us-west-1.amazonaws.com/1716148470030" id="searchButton">    
+      <img class="icon" src="https://lincolncaforum1.s3.us-west-1.amazonaws.com/1716148470030" id="searchButton">    
     </form>
-    
-  </div>
   
   
   <div class="white-bg">
@@ -45,8 +43,9 @@
           <p><%= 글목록[i].content %></p>
         <% } %>
       </div>
-    <% } %>
-  </div>  
+    <% } %>    
+  </div>
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>  
 
   <script>
     document.getElementById('searchButton').addEventListener('click', function(){
@@ -90,7 +89,14 @@
       let sentData = JSON.parse(e.data)
       console.log(sentData)
       console.log(sentData.username)
-      document.querySelector('.white-bg').insertAdjacentHTML('afterbegin', `<div class="list-box"><h4>${sentData.title}</h4></div>`)
+      
+      document.getElementById('toast-container').insertAdjacentHTML('afterbegin', `<div id="notification" class="toast" role="alert" aria-live="assertive" aria-atomic="true"><div class="toast-header"><string class="me-auto">${sentData.posterUsername}</string><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button></div><div class="toast-body">${sentData.text}</div></div>`)
+      const toastNotification = document.getElementById('notification')
+      const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastNotification)
+      toastBootstrap.show()
+      toastNotification.addEventListener('click', () => {
+        location.href = `/chat/detail/${sentData.parentId}`
+      })
     })
   </script>
 </body>
