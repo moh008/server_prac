@@ -445,14 +445,26 @@ app.post('/register', async (req: any, res
 
 //채팅방 추가
 app.get('/addChatRoom', async (req: any, res: Response) => {
-  if(req.session.passport) {
+  let chatroom = await db.collection('chats').find({ $or: [
+    {"member.invitor": new ObjectId(req.user._id)}, 
+    {"member.invitee": new ObjectId(req.user._id)}
+  ]}).toArray()
+  
+  //이미 만들어진 채팅방이 존재하는 경우, 존재하는 채팅방으로 redirect
+  if((chatroom[0].member.invitor.equals(req.user._id) && chatroom[0].member.invitee.equals(req.query.userId)) || 
+    (chatroom[0].member.invitee.equals(req.user._id) && chatroom[0].member.invitor.equals(req.query.userId))) 
+  {
+    res.redirect('/chat/detail/'+ chatroom[0]._id.toString())
+  } else if (req.query.userId.equals(req.user._id)) {
+    
+  }
+  else {//만든 채팅방이 없을 경우, 채팅방 신설 및 채팅방 목록으로 redirect
     await db.collection('chats').insertOne({
       member: {invitor: new ObjectId(req.user._id), invitor_username: req.user.username, invitee: new ObjectId(req.query.userId), invitee_username: req.query.username},
       date: new Date()
     })
-    console.log(req.user._id, req.query.user)
+    res.redirect('/chat/list')
   }
-  res.redirect('/chat/list')
 })
 
 //채팅방 입장
@@ -515,14 +527,24 @@ io.on('connection', (socket: any) => {
   })
 
   socket.on('message-send', async (data: any) => {              //서버는 메세지 수신시 룸에 전달 채팅상세DB 저장
+    let date = new Date()
+    let chatTime = ""
+    if (date.getHours() > 12) { 
+      chatTime = "PM" + (date.getHours()-12) + ":" + date.getMinutes()
+    } else {
+      chatTime = "AM" + (date.getHours()) + ":" + date.getMinutes()
+    }
+
     await db.collection('chatMessages').insertOne({
       text: data.msg,
       parentId: new ObjectId(data.room),
       poster: new ObjectId(data.poster),
       posterUsername: data.posterUsername,
-      date: new Date()
+      date: date
     }) //text, data, parentId, poster
-    io.to(data.room).emit('message-broadcast', {msg: data.msg, posterId: data.poster} )//data.room에 'message-broadcast'라는 이름으로 data.msg를 뿌려준다
+    
+
+    io.to(data.room).emit('message-broadcast', {msg: data.msg, posterId: data.poster, date: chatTime} )//data.room에 'message-broadcast'라는 이름으로 data.msg를 뿌려준다
   })
 })
 

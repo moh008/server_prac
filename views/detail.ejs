@@ -63,10 +63,12 @@
     <script src="https://uicdn.toast.com/editor/latest/toastui-editor-viewer.js"></script>
     <script>
       function enterChat() {
-        if(<%=signed%> == 1){
-          let userId = document.getElementById('posterUserId').value;
+        let userId = document.getElementById('posterUserId').value;
+        if('<%=user._id%>' != userId){
           let username = document.getElementById('posterUsername').value;
           location.href = '/addChatRoom?userId=' + userId +'&username=' + username
+        } else if ('<%=user._id%>' == userId) {
+          alert('본인과는 채팅할 수 없습니다')
         } else {
           alert('로그인시에만 채팅가능합니다')
           window.location.replace('/login')

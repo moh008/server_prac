@@ -30,8 +30,8 @@
           <a href="/detail/<%=글목록[i]._id%>" style="text-decoration:none; color:#000">
             <%= 글목록[i].title %>            
           </a>
-          <span class="edit" data-id = "<%=글목록[i]._id%>" data-userid="<%= 글목록[i].user %>" style="cursor:pointer">✏</span>          
           <%if (signed == 1) {%>
+            <span class="edit" data-id = "<%=글목록[i]._id%>" data-userid="<%= 글목록[i].user %>" style="cursor:pointer">✏</span> 
             <a id="delete" class="delete" style="cursor:pointer; float:right; text-decoration:none;" data-id="<%= 글목록[i]._id%>" data-user="<%= 글목록[i].username%>">🗑</a>               <!-- html에 _id 숨겨놓음-->
           <% } %>
         </h4>
